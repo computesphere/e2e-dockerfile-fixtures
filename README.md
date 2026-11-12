@@ -1,13 +1,9 @@
-# e2e Dockerfile fixtures
+# golden/fixed-port
 
-Tiny Dockerfiles that ComputeSphere's end-to-end checks build from git:
+A fixture for end-to-end checks, not a sample to copy.
 
-- `no-cmd/`: a Python image with no `CMD` of its own. Started with a start command, it serves on `$PORT`; without one it runs the base image's command.
-- `with-cmd/`: the same image with a `CMD` that serves on `$PORT`.
-- `context-copy/`: a Dockerfile that copies a file from its own folder, so it builds only with that folder as the build context, not the repository root.
-- `entrypoint/`: an `ENTRYPOINT` wrapper that prints a line, then runs its `CMD`.
-- `syntax-official/`: `with-cmd/` with the parser directive `# syntax=docker/dockerfile:1`, the official Dockerfile frontend.
-- `django-celery-redis/`: a one-file Django app with a Celery worker in the same container, both on `REDIS_URL`, built from the repository root. `/redis` pings through redis-py; `/celery` runs one task through the broker and the result backend. With a `rediss://` URL ending in `?ssl_cert_reqs=required&ssl_ca_certs=<CA file>`, both verify the cache's certificate.
-- `syntax-custom/`: `with-cmd/` with a parser directive naming a frontend image at an `.invalid` host. A build that only allows the official frontend refuses it.
+The branch root is a Node app with no dependencies that listens on port 3000 only. It ignores `PORT` on purpose, so a service deployed from it with any other port fails its health check. A check uses that to walk through deploy, fail, fix the port, redeploy.
 
-Each serves `index.html` naming its directory, so a request shows which one answered.
+Changes go through a pull request. Checks pin this branch's commit, so a change here shows up as "fixture changed", not as a product failure.
+
+The other fixtures are on `main`.
