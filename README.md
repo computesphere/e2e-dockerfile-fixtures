@@ -12,6 +12,7 @@ Tiny Dockerfiles that ComputeSphere's end-to-end checks build from git:
 - `multi-stage/`: a two-stage build; the final image copies `index.html` from the first stage.
 - `build-secret/`: reads the build secret `FIXTURE_SECRET` with `RUN --mount=type=secret` and prints only its size. Without that secret the build fails.
 - `socket-probe/`: a `RUN` step that fails the build if it can see a BuildKit daemon socket directory through `/proc`; it prints the count first. The build argument `PROBE_NONCE` keeps the step from being cached.
+- `userns-probe/`: a `RUN` step that prints the user namespace mappings it runs under (`/proc/self/uid_map`, and pid 1's uid and gid maps), and fails the build if it can write a host-wide kernel setting (`/proc/sys/kernel/core_pattern`; it writes back the value it read and prints it before and after, so nothing changes). A deliberate escape probe: run it only in a development build environment. The build argument `PROBE_NONCE` keeps the step from being cached.
 
 Each serves `index.html` naming its directory, so a request shows which one answered.
 
