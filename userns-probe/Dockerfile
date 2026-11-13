@@ -10,10 +10,14 @@ RUN echo "probe ${PROBE_NONCE}: uid=$(id -u)"; \
     echo "uid_map pid1: $(tr -s ' ' < /proc/1/uid_map 2>&1 | tr '\n' ';')"; \
     echo "gid_map pid1: $(tr -s ' ' < /proc/1/gid_map 2>&1 | tr '\n' ';')"; \
     cur=$(cat /proc/sys/kernel/core_pattern); \
+    echo "core_pattern before: $cur"; \
+    if [ -z "$cur" ]; then echo "core_pattern unreadable: FAIL"; exit 1; fi; \
     if (printf '%s\n' "$cur" > /proc/sys/kernel/core_pattern) 2>/dev/null; then \
-      echo "host kernel setting writable (same value written back): FAIL"; exit 1; \
+      echo "host kernel setting writable (same value written back): FAIL"; \
+      echo "core_pattern after: $(cat /proc/sys/kernel/core_pattern)"; exit 1; \
     else \
       echo "host kernel setting refused"; \
+      echo "core_pattern after: $(cat /proc/sys/kernel/core_pattern)"; \
     fi
 RUN echo "userns-probe fixture" > index.html
 EXPOSE 8080
