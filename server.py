@@ -12,14 +12,15 @@ import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
-NAME = re.compile(r"^[A-Z_][A-Z0-9_]{0,63}$")
+# fullmatch, not match with $: in Python, $ also matches before a trailing newline.
+NAME = re.compile(r"[A-Z_][A-Z0-9_]{0,63}")
 MAX_NAMES = 10
 
 
 def check(raw, environ):
     """(status, body) for the query value of `names`, against the mapping `environ`."""
     names = [n for n in (raw or "").split(",") if n]
-    if not names or len(names) > MAX_NAMES or not all(NAME.match(n) for n in names):
+    if not names or len(names) > MAX_NAMES or not all(NAME.fullmatch(n) for n in names):
         # A fixed sentence: the refusal never repeats what was sent.
         return 400, {"error": f"names: 1 to {MAX_NAMES} comma-separated names like DATABASE_URL"}
     asked = sorted(set(names))

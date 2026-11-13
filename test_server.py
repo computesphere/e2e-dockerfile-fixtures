@@ -21,7 +21,7 @@ class Check(unittest.TestCase):
         self.assertNotIn("PORT", text)
 
     def test_refuses_bad_or_too_many_names_without_echoing_them(self):
-        for raw in ["", ",", "db_url", "A B", "A;B", "<script>", "X" * 65, ",".join(f"N{i}" for i in range(MAX_NAMES + 1))]:
+        for raw in ["", ",", "db_url", "A B", "A;B", "<script>", "DB_URL\n", "\nDB_URL", "X" * 65, ",".join(f"N{i}" for i in range(MAX_NAMES + 1))]:
             status, body = check(raw, FAKE)
             self.assertEqual(status, 400, raw)
             for part in filter(None, raw.split(",")):
@@ -48,6 +48,7 @@ class Served(unittest.TestCase):
         return r.status, r.headers, r.read().decode()
 
     def test_json_nosniff_no_store(self):
+        self.assertEqual(self.get("/env-names?names=DB_URL%0A")[0], 400)
         for path in ["/env-names?names=NOT_SET_HERE", "/env-names?names=%3Cscript%3E"]:
             status, headers, body = self.get(path)
             self.assertEqual(headers["content-type"], "application/json", path)
