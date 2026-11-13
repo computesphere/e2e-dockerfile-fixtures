@@ -1,0 +1,18 @@
+FROM python:3.13-slim@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
+WORKDIR /srv
+# Reports the user namespace mappings a build step runs under, and fails the
+# build if the step can change a host-wide kernel setting. PROBE_NONCE (a build
+# argument) keeps the step from being cached.
+ARG PROBE_NONCE=0
+RUN echo "probe ${PROBE_NONCE}: uid=$(id -u)"; \
+    echo "uid_map self: $(tr -s ' ' < /proc/self/uid_map | tr '\n' ';')"; \
+    echo "uid_map pid1: $(tr -s ' ' < /proc/1/uid_map 2>&1 | tr '\n' ';')"; \
+    echo "gid_map pid1: $(tr -s ' ' < /proc/1/gid_map 2>&1 | tr '\n' ';')"; \
+    if (echo core > /proc/sys/kernel/core_pattern) 2>/dev/null; then \
+      echo "host kernel setting written: FAIL"; exit 1; \
+    else \
+      echo "host kernel setting refused"; \
+    fi
+RUN echo "userns-probe fixture" > index.html
+EXPOSE 8080
+CMD ["sh", "-c", "python -m http.server ${PORT:-8080}"]
