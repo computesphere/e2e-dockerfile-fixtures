@@ -1,3 +1,5 @@
+import contextlib
+import io
 import json
 import threading
 import unittest
@@ -61,6 +63,14 @@ class Served(unittest.TestCase):
     def test_root_and_unknown(self):
         self.assertEqual(self.get("/")[2], "golden/env-names fixture\n")
         self.assertEqual(self.get("/nope")[0], 404)
+
+    def test_log_line_is_method_and_path_only(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.get("/env-names?names=LOGGED_NAME_PROBE")
+        self.assertIn("GET /env-names", out.getvalue())
+        self.assertNotIn("LOGGED_NAME_PROBE", out.getvalue())
+        self.assertNotIn("?", out.getvalue())
 
 
 if __name__ == "__main__":
