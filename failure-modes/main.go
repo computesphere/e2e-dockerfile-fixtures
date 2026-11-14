@@ -10,6 +10,8 @@
 //	       connection with no reply (TCP RST); /healthz answers 200.
 //	refuse nothing listens on PORT; /healthz answers 200 on HEALTH_PORT
 //	       (default 8081) only.
+//	wrong-port serves every path on WRONG_PORT (default 8081) and never on
+//	       PORT, like an app that ignores PORT and binds its own port.
 //
 // It listens on PORT (default 8080). Nothing else: no secrets, no outbound
 // calls, no storage.
@@ -34,6 +36,13 @@ func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
+	}
+	if mode == "wrong-port" {
+		wp := os.Getenv("WRONG_PORT")
+		if wp == "" || wp == port {
+			wp = "8081"
+		}
+		port = wp
 	}
 	if mode == "oom-start" {
 		log.Printf("mode=oom-start: allocating until out of memory")
