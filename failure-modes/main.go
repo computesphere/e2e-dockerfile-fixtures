@@ -4,6 +4,8 @@
 //	ok     every path answers 200.
 //	oom    GET /burst allocates and touches memory until the container
 //	       runs out of memory; every other path answers 200.
+//	oom-start allocates and touches memory at startup, before it listens,
+//	       so the container runs out of memory on every start.
 //	reset  every path but /healthz accepts the request, then closes the
 //	       connection with no reply (TCP RST); /healthz answers 200.
 //	refuse nothing listens on PORT; /healthz answers 200 on HEALTH_PORT
@@ -33,6 +35,10 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+	if mode == "oom-start" {
+		log.Printf("mode=oom-start: allocating until out of memory")
+		burn()
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprintln(w, "ok")
@@ -40,15 +46,7 @@ func main() {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case mode == "oom" && r.URL.Path == "/burst":
-			for {
-				b := make([]byte, 32<<20)
-				for i := range b {
-					if i%4096 == 0 {
-						b[i] = 1
-					}
-				}
-				hold = append(hold, b)
-			}
+			burn()
 		case mode == "reset":
 			hj, ok := w.(http.Hijacker)
 			if !ok {
@@ -86,4 +84,18 @@ func main() {
 	srv := &http.Server{Addr: ":" + port, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	log.Printf("mode=%s port=%s", mode, port)
 	log.Fatal(srv.ListenAndServe())
+}
+
+// burn allocates 32 MiB at a time and touches every page, so the memory is
+// really used, until the process is killed for running out of it.
+func burn() {
+	for {
+		b := make([]byte, 32<<20)
+		for i := range b {
+			if i%4096 == 0 {
+				b[i] = 1
+			}
+		}
+		hold = append(hold, b)
+	}
 }
