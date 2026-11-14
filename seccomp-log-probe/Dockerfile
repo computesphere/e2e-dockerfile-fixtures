@@ -10,6 +10,10 @@ WORKDIR /srv
 # build argument PROBE_NONCE keeps the step from being cached.
 ARG PROBE_NONCE=0
 RUN python3 -c "import ctypes, os, socket; libc = ctypes.CDLL(None, use_errno=True); s = socket.socket(socket.AF_NETLINK, socket.SOCK_RAW, 0); s.close(); r = libc.syscall(134, None); print('probe ${PROBE_NONCE}: pid', os.getpid(), 'netlink route socket opened and closed; uselib(NULL) returned', r, 'errno', ctypes.get_errno())"
+# Prints the kernel's ptrace scope (Yama) as a build step sees it: 0 lets a
+# process attach to any process of the same user; 1 or more only to its own
+# descendants (or with CAP_SYS_PTRACE). Read only.
+RUN echo "probe ${PROBE_NONCE}: yama ptrace_scope=$(cat /proc/sys/kernel/yama/ptrace_scope 2>&1)"
 RUN echo "seccomp-log-probe fixture" > index.html
 EXPOSE 8080
 CMD ["sh", "-c", "python -m http.server ${PORT:-8080}"]
