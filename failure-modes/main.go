@@ -12,6 +12,11 @@
 //	       (default 8081) only.
 //	wrong-port serves every path on WRONG_PORT (default 8081) and never on
 //	       PORT, like an app that ignores PORT and binds its own port.
+//	loopback serves every path on PORT but only on 127.0.0.1, so nothing
+//	       outside the container can reach it.
+//
+// Every mode that serves logs "listening on <address>" at startup, as most
+// web frameworks do.
 //
 // It listens on PORT (default 8080). Nothing else: no secrets, no outbound
 // calls, no storage.
@@ -90,8 +95,13 @@ func main() {
 		}
 		go func() { log.Fatal(hs.ListenAndServe()) }()
 	}
-	srv := &http.Server{Addr: ":" + port, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
-	log.Printf("mode=%s port=%s", mode, port)
+	host := "0.0.0.0"
+	if mode == "loopback" {
+		host = "127.0.0.1"
+	}
+	addr := net.JoinHostPort(host, port)
+	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
+	log.Printf("mode=%s: listening on %s", mode, addr)
 	log.Fatal(srv.ListenAndServe())
 }
 
