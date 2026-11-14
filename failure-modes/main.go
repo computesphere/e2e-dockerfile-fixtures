@@ -95,13 +95,15 @@ func main() {
 		}
 		go func() { log.Fatal(hs.ListenAndServe()) }()
 	}
-	host := "0.0.0.0"
+	// Every mode but loopback binds all addresses (IPv4 and IPv6); the log
+	// names the IPv4 form, as most frameworks print it.
+	bind, shown := ":"+port, net.JoinHostPort("0.0.0.0", port)
 	if mode == "loopback" {
-		host = "127.0.0.1"
+		bind = net.JoinHostPort("127.0.0.1", port)
+		shown = bind
 	}
-	addr := net.JoinHostPort(host, port)
-	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
-	log.Printf("mode=%s: listening on %s", mode, addr)
+	srv := &http.Server{Addr: bind, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
+	log.Printf("mode=%s: listening on %s", mode, shown)
 	log.Fatal(srv.ListenAndServe())
 }
 
